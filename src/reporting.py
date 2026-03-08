@@ -676,6 +676,7 @@ def write_tsumitate_simulation_html(
       border: 1px solid #cbd5e1;
       border-radius: .85rem;
       padding: .58rem .75rem;
+      font-size: 16px;
       background: #fff;
       color: #0f172a;
     }
@@ -786,7 +787,7 @@ def write_tsumitate_simulation_html(
       .hero-image-wrap { width: 150px; top: 10px; right: 10px; }
     }
 
-    @media (max-width: 680px) {
+    @media (max-width: 900px) {
       .hero-image-wrap { display: none; }
     }
   </style>
@@ -800,10 +801,10 @@ def write_tsumitate_simulation_html(
     <img id="heroImage2" src="__HERO_IMAGE2__" alt="hero scene" />
   </div>
 
-  <main id="appShell" class="app-shell max-w-7xl mx-auto px-4 py-7 md:py-10">
+  <main id="appShell" class="app-shell max-w-7xl mx-auto px-3 sm:px-4 py-5 sm:py-7 md:py-9">
     <header class="mb-5">
-      <h1 class="text-3xl md:text-5xl font-black tracking-tight">積立投資シミュレーション</h1>
-      <p class="mt-2 text-slate-500">条件を変えると自動で計算が反映され、将来資産の到達イメージがすぐ分かります。</p>
+      <h1 class="text-2xl md:text-4xl font-black tracking-tight">積立投資シミュレーション</h1>
+      <p class="mt-2 text-slate-500">条件を変えると自動で計算が反映</p>
     </header>
 
     <section class="grid grid-cols-1 lg:grid-cols-12 gap-4">
@@ -892,7 +893,7 @@ def write_tsumitate_simulation_html(
         </div>
 
         <div class="mt-4">
-          <div id="chart" class="h-96"></div>
+          <div id="chart" class="h-[320px] md:h-96"></div>
         </div>
 
         <p class="mt-4 text-xs text-slate-500 leading-relaxed">
@@ -1178,6 +1179,8 @@ def write_tsumitate_simulation_html(
         .replace("__HERO_IMAGE2__", hero_image2)
     )
     output_path.write_text(html, encoding="utf-8")
+
+
 
 
 
