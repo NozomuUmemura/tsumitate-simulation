@@ -1,0 +1,549 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>積立投資シミュレーション</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Noto Sans JP"', '"Segoe UI"', 'sans-serif']
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    :root {
+      --bg: #ffffff;
+      --panel: #ffffff;
+      --panel-soft: #f8fafc;
+      --border: #e2e8f0;
+      --text: #0f172a;
+      --muted: #64748b;
+      --accent: #0284c7;
+      --accent-2: #22c55e;
+      --accent-3: #f43f5e;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+
+    .glass {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      box-shadow: 0 16px 40px rgba(15, 23, 42, .08);
+      transition: transform .28s ease, box-shadow .28s ease;
+    }
+
+    .glass:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 22px 50px rgba(15, 23, 42, .12);
+    }
+
+    .control {
+      width: 100%;
+      border: 1px solid #cbd5e1;
+      border-radius: .85rem;
+      padding: .58rem .75rem;
+      background: #fff;
+      color: #0f172a;
+    }
+
+    .control:focus {
+      outline: none;
+      border-color: rgba(2,132,199,.9);
+      box-shadow: 0 0 0 3px rgba(2,132,199,.16);
+    }
+
+    .mode-chip {
+      border: 1px solid #d1d5db;
+      border-radius: 999px;
+      padding: .42rem .76rem;
+      font-size: .8rem;
+      font-weight: 700;
+      color: #334155;
+      background: #fff;
+      transition: all .2s ease;
+      cursor: pointer;
+    }
+
+    .mode-chip.active {
+      color: #fff;
+      border-color: transparent;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      box-shadow: 0 10px 24px rgba(2,132,199,.24);
+    }
+
+    .range {
+      accent-color: var(--accent);
+      width: 100%;
+      cursor: pointer;
+    }
+
+    .hero-image-wrap {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      z-index: 50;
+      width: min(24vw, 240px);
+      cursor: pointer;
+      animation: floaty 3.2s ease-in-out infinite;
+      transition: transform .22s ease;
+    }
+
+    .hero-image-wrap:hover { transform: scale(1.02); }
+
+    .hero-image-wrap img {
+      width: 100%;
+      height: auto;
+      display: block;
+      border: none;
+      outline: none;
+      box-shadow: none;
+      background: transparent;
+    }
+
+    @keyframes floaty {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-7px); }
+    }
+
+    .scene-transition {
+      position: fixed;
+      inset: 0;
+      z-index: 999;
+      background: #fff;
+      display: grid;
+      place-items: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .5s ease;
+    }
+
+    .scene-transition.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .scene-transition img {
+      width: min(88vw, 760px);
+      height: auto;
+      opacity: 0;
+      transform: scale(.98);
+      transition: opacity .5s ease, transform .5s ease;
+    }
+
+    .scene-transition.active img {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .app-shell {
+      transition: opacity .5s ease, transform .5s ease;
+      opacity: 1;
+      transform: scale(1);
+      position: relative;
+      z-index: 1;
+    }
+
+    .app-shell.leaving {
+      opacity: .15;
+      transform: scale(.985);
+    }
+
+    @media (max-width: 980px) {
+      .hero-image-wrap { width: 150px; top: 10px; right: 10px; }
+    }
+
+    @media (max-width: 680px) {
+      .hero-image-wrap { display: none; }
+    }
+  </style>
+</head>
+<body class="font-sans">
+  <button id="heroImageWrap" class="hero-image-wrap" aria-label="image transition">
+    <img id="heroImage" src="image.png" alt="hero" />
+  </button>
+
+  <div id="sceneTransition" class="scene-transition">
+    <img id="heroImage2" src="image2.png" alt="hero scene" />
+  </div>
+
+  <main id="appShell" class="app-shell max-w-7xl mx-auto px-4 py-7 md:py-10">
+    <header class="mb-5">
+      <h1 class="text-3xl md:text-5xl font-black tracking-tight">積立投資シミュレーション</h1>
+      <p class="mt-2 text-slate-500">条件を変えると自動で計算が反映され、将来資産の到達イメージがすぐ分かります。</p>
+    </header>
+
+    <section class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+      <article class="glass rounded-2xl p-5 lg:col-span-4">
+        <h2 class="text-lg font-black">入力条件</h2>
+
+        <label class="block mt-4">
+          <span class="text-xs font-bold text-slate-500">投資対象プリセット</span>
+          <select id="presetSelect" class="control mt-1"></select>
+        </label>
+
+        <div class="mt-4">
+          <div class="text-xs font-bold text-slate-500 mb-2">計算モード</div>
+          <div class="flex flex-wrap gap-2" id="modeChips">
+            <button class="mode-chip active" data-mode="future_value">将来いくら</button>
+            <button class="mode-chip" data-mode="required_monthly">必要な積立額</button>
+            <button class="mode-chip" data-mode="years_to_goal">何年で到達</button>
+            <button class="mode-chip" data-mode="required_initial">必要な初期額</button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-3 mt-4">
+          <label class="block">
+            <span class="text-xs font-bold text-slate-500">初期投資額（円）</span>
+            <input id="initial" class="control mt-1" type="number" min="0" step="10000" value="0" />
+          </label>
+          <label class="block">
+            <span class="text-xs font-bold text-slate-500">毎月積立額（円）</span>
+            <input id="monthly" class="control mt-1" type="number" min="0" step="1000" value="100000" />
+          </label>
+          <label class="block">
+            <span class="text-xs font-bold text-slate-500">運用年数（年）</span>
+            <input id="years" class="control mt-1" type="number" min="1" max="60" value="10" />
+          </label>
+          <label class="block">
+            <span class="text-xs font-bold text-slate-500">目標金額（円）</span>
+            <input id="goal" class="control mt-1" type="number" min="0" step="100000" value="20000000" />
+          </label>
+
+          <label class="block">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-slate-500">想定リターン（年率%）</span>
+              <span id="annualReturnValue" class="text-xs text-sky-600 font-bold">6.00%</span>
+            </div>
+            <input id="annualReturn" class="control mt-1" type="number" step="0.1" value="6.0" />
+            <input id="annualReturnRange" class="range mt-2" type="range" min="-10" max="30" step="0.1" value="6.0" />
+          </label>
+
+          <label class="block">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-slate-500">リスク（年率標準偏差%）</span>
+              <span id="annualVolValue" class="text-xs text-emerald-600 font-bold">18.00%</span>
+            </div>
+            <input id="annualVol" class="control mt-1" type="number" step="0.1" min="0" value="18.0" />
+            <input id="annualVolRange" class="range mt-2" type="range" min="0" max="80" step="0.1" value="18.0" />
+          </label>
+        </div>
+      </article>
+
+      <article class="glass rounded-2xl p-5 lg:col-span-8">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+          <h2 class="text-lg font-black">シミュレーション結果</h2>
+          <div class="text-xs text-slate-500">モンテカルロ: 1,500パス</div>
+        </div>
+
+        <div id="resultMain" class="mt-3 text-3xl md:text-4xl font-black">-</div>
+        <div id="resultSub" class="text-sm text-slate-500 mt-1">-</div>
+
+        <div class="mt-4 grid grid-cols-1 md:grid-cols-4 gap-3">
+          <div class="rounded-xl p-3 border border-slate-200 bg-slate-50">
+            <div class="text-xs font-bold text-slate-500">元本合計</div>
+            <div id="principalOut" class="mt-1 text-lg font-black">-</div>
+          </div>
+          <div class="rounded-xl p-3 border border-slate-200 bg-slate-50">
+            <div class="text-xs font-bold text-slate-500">評価額（中央値）</div>
+            <div id="medianOut" class="mt-1 text-lg font-black">-</div>
+          </div>
+          <div class="rounded-xl p-3 border border-slate-200 bg-slate-50">
+            <div class="text-xs font-bold text-slate-500">利益（中央値）</div>
+            <div id="profitOut" class="mt-1 text-lg font-black">-</div>
+          </div>
+          <div class="rounded-xl p-3 border border-slate-200 bg-slate-50">
+            <div class="text-xs font-bold text-slate-500">目標達成確率</div>
+            <div id="goalProbOut" class="mt-1 text-lg font-black">-</div>
+          </div>
+        </div>
+
+        <div class="mt-4">
+          <div id="chart" class="h-96"></div>
+        </div>
+
+        <p class="mt-4 text-xs text-slate-500 leading-relaxed">
+          試算は簡易モデルです。将来の運用成果を保証するものではありません。税金・手数料・為替・投資タイミング差などは簡略化しています。
+        </p>
+      </article>
+    </section>
+  </main>
+
+  <script>
+    const presets = [{"ticker": "ACWI", "label": "オルカン（全世界株）", "annual_return": 0.17451666889244843, "annual_vol": 0.17}, {"ticker": "SPY", "label": "S&P500", "annual_return": 0.21300442900778058, "annual_vol": 0.19}, {"ticker": "^N225", "label": "日経平均", "annual_return": 0.18199380922956032, "annual_vol": 0.22}, {"ticker": "VTI", "label": "米国株式（全体）", "annual_return": 0.072, "annual_vol": 0.18}, {"ticker": "QQQ", "label": "NASDAQ100", "annual_return": 0.085, "annual_vol": 0.26}, {"ticker": "VEA", "label": "先進国株（除く米国）", "annual_return": 0.055, "annual_vol": 0.18}, {"ticker": "VWO", "label": "新興国株", "annual_return": 0.06, "annual_vol": 0.24}, {"ticker": "EFA", "label": "MSCI EAFE", "annual_return": 0.053, "annual_vol": 0.17}, {"ticker": "EEM", "label": "MSCI Emerging", "annual_return": 0.062, "annual_vol": 0.25}, {"ticker": "GLD", "label": "金（ゴールド）", "annual_return": 0.038, "annual_vol": 0.16}, {"ticker": "AGG", "label": "米国総合債券", "annual_return": 0.028, "annual_vol": 0.07}, {"ticker": "BND", "label": "米国債券（BND）", "annual_return": 0.027, "annual_vol": 0.06}, {"ticker": "VNQ", "label": "米国REIT", "annual_return": 0.05, "annual_vol": 0.21}, {"ticker": "BTC-USD", "label": "ビットコイン", "annual_return": 0.12, "annual_vol": 0.6}, {"ticker": "6448.T", "label": "ブラザー工業", "annual_return": 0.062, "annual_vol": 0.27}, {"ticker": "7203.T", "label": "トヨタ", "annual_return": 0.067, "annual_vol": 0.24}, {"ticker": "6902.T", "label": "DENSO", "annual_return": 0.064, "annual_vol": 0.25}, {"ticker": "7951.T", "label": "ヤマハ株式会社", "annual_return": 0.058, "annual_vol": 0.23}, {"ticker": "7974.T", "label": "任天堂", "annual_return": 0.072, "annual_vol": 0.29}, {"ticker": "9983.T", "label": "ファーストリテイリング", "annual_return": 0.07, "annual_vol": 0.28}];
+    let stateMode = "future_value";
+
+    const fmtYen = (v) => new Intl.NumberFormat("ja-JP", { style: "currency", currency: "JPY", maximumFractionDigits: 0 }).format(v);
+    const pct = (v) => `${Number(v).toFixed(2)}%`;
+
+    function futureValue(initial, monthly, years, annualReturn) {
+      const n = Math.max(1, Math.round(years * 12));
+      const r = Math.pow(1 + annualReturn, 1 / 12) - 1;
+      if (Math.abs(r) < 1e-12) return initial + monthly * n;
+      return initial * Math.pow(1 + r, n) + monthly * ((Math.pow(1 + r, n) - 1) / r);
+    }
+
+    function requiredMonthly(target, initial, years, annualReturn) {
+      const n = Math.max(1, Math.round(years * 12));
+      const r = Math.pow(1 + annualReturn, 1 / 12) - 1;
+      if (Math.abs(r) < 1e-12) return Math.max(0, (target - initial) / n);
+      const futureInitial = initial * Math.pow(1 + r, n);
+      return Math.max(0, (target - futureInitial) * r / (Math.pow(1 + r, n) - 1));
+    }
+
+    function requiredInitial(target, monthly, years, annualReturn) {
+      const n = Math.max(1, Math.round(years * 12));
+      const r = Math.pow(1 + annualReturn, 1 / 12) - 1;
+      if (Math.abs(r) < 1e-12) return Math.max(0, target - monthly * n);
+      const fvMonthly = monthly * ((Math.pow(1 + r, n) - 1) / r);
+      return Math.max(0, (target - fvMonthly) / Math.pow(1 + r, n));
+    }
+
+    function yearsToGoal(target, initial, monthly, annualReturn, maxYears = 60) {
+      for (let y = 1; y <= maxYears; y += 1) {
+        if (futureValue(initial, monthly, y, annualReturn) >= target) return y;
+      }
+      return null;
+    }
+
+    function randnBM() {
+      let u = 0, v = 0;
+      while (u === 0) u = Math.random();
+      while (v === 0) v = Math.random();
+      return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+    }
+
+    function monteCarloPaths(initial, monthly, years, annualReturn, annualVol, paths = 1500) {
+      const months = Math.max(1, Math.round(years * 12));
+      const m = annualReturn / 12;
+      const s = annualVol / Math.sqrt(12);
+      const snapshots = [];
+
+      for (let p = 0; p < paths; p += 1) {
+        let value = initial;
+        const series = [value];
+        for (let t = 1; t <= months; t += 1) {
+          const shock = randnBM();
+          const rt = m + s * shock;
+          value = value * (1 + rt) + monthly;
+          if (value < 0) value = 0;
+          series.push(value);
+        }
+        snapshots.push(series);
+      }
+
+      return { snapshots, months };
+    }
+
+    function percentile(arr, p) {
+      const sorted = [...arr].sort((a, b) => a - b);
+      const idx = Math.min(sorted.length - 1, Math.max(0, Math.floor((sorted.length - 1) * p)));
+      return sorted[idx];
+    }
+
+    function drawChart(initial, monthly, years, annualReturn, annualVol, goal) {
+      const { snapshots, months } = monteCarloPaths(initial, monthly, years, annualReturn, annualVol);
+      const x = Array.from({ length: months + 1 }, (_, i) => i / 12);
+      const p10 = [], p50 = [], p90 = [];
+
+      for (let i = 0; i <= months; i += 1) {
+        const vals = snapshots.map((s) => s[i]);
+        p10.push(percentile(vals, 0.10));
+        p50.push(percentile(vals, 0.50));
+        p90.push(percentile(vals, 0.90));
+      }
+
+      const deterministic = x.map((t) => futureValue(initial, monthly, t, annualReturn));
+      const finals = snapshots.map((s) => s[s.length - 1]);
+      const goalProb = finals.filter((v) => v >= goal).length / finals.length;
+
+      Plotly.react("chart", [
+        { x, y: p90, mode: "lines", name: "上位10%", line: { color: "#22c55e", width: 2.3 } },
+        { x, y: p50, mode: "lines", name: "中央値", line: { color: "#0284c7", width: 3.2 } },
+        { x, y: p10, mode: "lines", name: "下位10%", line: { color: "#f43f5e", width: 2.3 } },
+        { x, y: deterministic, mode: "lines", name: "期待値ベース", line: { color: "#64748b", dash: "dot", width: 2 } },
+        { x, y: x.map(() => goal), mode: "lines", name: "目標金額", line: { color: "#eab308", dash: "dash", width: 1.8 } },
+      ], {
+        paper_bgcolor: "rgba(0,0,0,0)",
+        plot_bgcolor: "rgba(0,0,0,0)",
+        margin: { l: 54, r: 20, t: 22, b: 42 },
+        font: { color: "#334155" },
+        xaxis: { title: "経過年数", gridcolor: "rgba(148,163,184,.35)" },
+        yaxis: { title: "評価額（円）", tickformat: ",.0f", gridcolor: "rgba(148,163,184,.35)" },
+        legend: { orientation: "h" },
+      }, { displayModeBar: false, responsive: true });
+
+      return { median: p50[p50.length - 1], goalProb };
+    }
+
+    function syncRanges() {
+      const rInput = document.getElementById("annualReturn");
+      const rRange = document.getElementById("annualReturnRange");
+      const vInput = document.getElementById("annualVol");
+      const vRange = document.getElementById("annualVolRange");
+
+      rRange.value = rInput.value;
+      vRange.value = vInput.value;
+      document.getElementById("annualReturnValue").textContent = `${Number(rInput.value).toFixed(2)}%`;
+      document.getElementById("annualVolValue").textContent = `${Number(vInput.value).toFixed(2)}%`;
+    }
+
+    function calc() {
+      const initial = Math.max(0, Number(document.getElementById("initial").value || 0));
+      const monthly = Math.max(0, Number(document.getElementById("monthly").value || 0));
+      const years = Math.max(1, Number(document.getElementById("years").value || 1));
+      const goal = Math.max(0, Number(document.getElementById("goal").value || 0));
+      const annualReturn = Number(document.getElementById("annualReturn").value || 0) / 100;
+      const annualVol = Math.max(0, Number(document.getElementById("annualVol").value || 0)) / 100;
+
+      let mainText = "-";
+      let subText = "-";
+      let simYears = years;
+
+      if (stateMode === "future_value") {
+        const value = futureValue(initial, monthly, years, annualReturn);
+        mainText = fmtYen(value);
+        subText = `${years}年後の想定評価額（期待値ベース）`;
+      } else if (stateMode === "required_monthly") {
+        const req = requiredMonthly(goal, initial, years, annualReturn);
+        mainText = fmtYen(req);
+        subText = `${fmtYen(goal)}を${years}年で目指すための毎月積立額`;
+      } else if (stateMode === "years_to_goal") {
+        const needYears = yearsToGoal(goal, initial, monthly, annualReturn);
+        mainText = needYears ? `${needYears}年` : "60年以上";
+        subText = `${fmtYen(goal)}到達までの目安年数`;
+        simYears = needYears || 60;
+      } else {
+        const reqInit = requiredInitial(goal, monthly, years, annualReturn);
+        mainText = fmtYen(reqInit);
+        subText = `${fmtYen(goal)}を${years}年で目指すための初期投資額`;
+      }
+
+      const principal = initial + monthly * Math.round(simYears * 12);
+      const mc = drawChart(initial, monthly, simYears, annualReturn, annualVol, goal);
+      const median = mc.median;
+
+      document.getElementById("resultMain").textContent = mainText;
+      document.getElementById("resultSub").textContent = subText;
+      document.getElementById("principalOut").textContent = fmtYen(principal);
+      document.getElementById("medianOut").textContent = fmtYen(median);
+      document.getElementById("profitOut").textContent = fmtYen(median - principal);
+      document.getElementById("goalProbOut").textContent = pct(mc.goalProb * 100);
+
+      syncRanges();
+    }
+
+    function initPresets() {
+      const select = document.getElementById("presetSelect");
+      if (!presets.length) {
+        select.innerHTML = '<option value="none">標準</option>';
+        return;
+      }
+
+      select.innerHTML = presets
+        .map((p, idx) => `<option value="${idx}">${p.label}（年率 ${pct(Number(p.annual_return) * 100)} / リスク ${pct(Number(p.annual_vol) * 100)}）</option>`)
+        .join("");
+
+      const apply = (idx) => {
+        const p = presets[idx];
+        if (!p) return;
+        document.getElementById("annualReturn").value = (Number(p.annual_return) * 100).toFixed(2);
+        document.getElementById("annualVol").value = (Number(p.annual_vol) * 100).toFixed(2);
+      };
+
+      apply(0);
+      select.addEventListener("change", () => {
+        apply(Number(select.value));
+        calc();
+      });
+    }
+
+    function initModeChips() {
+      document.querySelectorAll("#modeChips .mode-chip").forEach((chip) => {
+        chip.addEventListener("click", () => {
+          stateMode = chip.dataset.mode;
+          document.querySelectorAll("#modeChips .mode-chip").forEach((c) => c.classList.remove("active"));
+          chip.classList.add("active");
+          calc();
+        });
+      });
+    }
+
+    function initAutoBindings() {
+      const pairs = [["annualReturn", "annualReturnRange"], ["annualVol", "annualVolRange"]];
+
+      pairs.forEach(([inputId, rangeId]) => {
+        const input = document.getElementById(inputId);
+        const range = document.getElementById(rangeId);
+
+        input.addEventListener("input", () => {
+          range.value = input.value;
+          calc();
+        });
+
+        range.addEventListener("input", () => {
+          input.value = range.value;
+          calc();
+        });
+      });
+
+      ["initial", "monthly", "years", "goal"].forEach((id) => {
+        document.getElementById(id).addEventListener("input", calc);
+      });
+    }
+
+    function initHeroTransition() {
+      const hero = document.getElementById("heroImageWrap");
+      const image = document.getElementById("heroImage");
+      const image2 = document.getElementById("heroImage2");
+      const scene = document.getElementById("sceneTransition");
+      const app = document.getElementById("appShell");
+
+      let triggered = false;
+
+      image.addEventListener("error", () => { hero.style.display = "none"; });
+      image2.addEventListener("error", () => { scene.style.display = "none"; });
+
+      hero.addEventListener("click", () => {
+        if (triggered) return;
+        triggered = true;
+
+        app.classList.add("leaving");
+        scene.classList.add("active");
+
+        setTimeout(() => {
+          setTimeout(() => {
+            const tryClose = () => {
+              window.open("", "_self");
+              window.close();
+              setTimeout(() => {
+                if (!window.closed) {
+                  location.href = "about:blank";
+                }
+              }, 250);
+            };
+            tryClose();
+          }, 3000);
+        }, 500);
+      });
+    }
+
+    initPresets();
+    initModeChips();
+    initAutoBindings();
+    initHeroTransition();
+    calc();
+  </script>
+</body>
+</html>
