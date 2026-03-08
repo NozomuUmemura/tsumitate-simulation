@@ -713,14 +713,15 @@ def write_tsumitate_simulation_html(
     }
 
     .hero-image-wrap {
-      position: fixed;
-      top: 16px;
-      right: 16px;
-      z-index: 50;
-      width: min(24vw, 240px);
+      width: clamp(92px, 12vw, 130px);
       cursor: pointer;
+      margin-top: -4px;
+      flex-shrink: 0;
       animation: floaty 3.2s ease-in-out infinite;
       transition: transform .22s ease;
+      background: transparent;
+      border: none;
+      padding: 0;
     }
 
     .hero-image-wrap:hover { transform: scale(1.02); }
@@ -783,28 +784,29 @@ def write_tsumitate_simulation_html(
       transform: scale(.985);
     }
 
-    @media (max-width: 980px) {
-      .hero-image-wrap { width: 150px; top: 10px; right: 10px; }
+    @media (max-width: 900px) {
+      .hero-image-wrap { width: 96px; margin-top: 2px; }
     }
 
-    @media (max-width: 900px) {
+    @media (max-width: 560px) {
       .hero-image-wrap { display: none; }
     }
   </style>
 </head>
 <body class="font-sans">
-  <button id="heroImageWrap" class="hero-image-wrap" aria-label="image transition">
-    <img id="heroImage" src="__HERO_IMAGE__" alt="hero" />
-  </button>
-
   <div id="sceneTransition" class="scene-transition">
     <img id="heroImage2" src="__HERO_IMAGE2__" alt="hero scene" />
   </div>
 
   <main id="appShell" class="app-shell max-w-7xl mx-auto px-3 sm:px-4 py-5 sm:py-7 md:py-9">
-    <header class="mb-5">
-      <h1 class="text-2xl md:text-4xl font-black tracking-tight">積立投資シミュレーション</h1>
-      <p class="mt-2 text-slate-500">条件を変えると自動で計算が反映</p>
+    <header class="mb-5 flex items-start justify-between gap-3 sm:gap-4">
+      <div class="min-w-0">
+        <h1 class="text-2xl md:text-4xl font-black tracking-tight">積立投資シミュレーション</h1>
+        <p class="mt-2 text-slate-500">条件を変えると自動で計算が反映</p>
+      </div>
+      <button id="heroImageWrap" class="hero-image-wrap" aria-label="image transition">
+        <img id="heroImage" src="__HERO_IMAGE__" alt="hero" />
+      </button>
     </header>
 
     <section class="grid grid-cols-1 lg:grid-cols-12 gap-4">
@@ -1179,6 +1181,7 @@ def write_tsumitate_simulation_html(
         .replace("__HERO_IMAGE2__", hero_image2)
     )
     output_path.write_text(html, encoding="utf-8")
+
 
 
 
