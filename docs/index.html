@@ -91,14 +91,15 @@
     }
 
     .hero-image-wrap {
-      position: fixed;
-      top: 16px;
-      right: 16px;
-      z-index: 50;
-      width: min(24vw, 240px);
+      width: clamp(92px, 12vw, 130px);
       cursor: pointer;
+      margin-top: -4px;
+      flex-shrink: 0;
       animation: floaty 3.2s ease-in-out infinite;
       transition: transform .22s ease;
+      background: transparent;
+      border: none;
+      padding: 0;
     }
 
     .hero-image-wrap:hover { transform: scale(1.02); }
@@ -161,28 +162,29 @@
       transform: scale(.985);
     }
 
-    @media (max-width: 980px) {
-      .hero-image-wrap { width: 150px; top: 10px; right: 10px; }
+    @media (max-width: 900px) {
+      .hero-image-wrap { width: 96px; margin-top: 2px; }
     }
 
-    @media (max-width: 900px) {
+    @media (max-width: 560px) {
       .hero-image-wrap { display: none; }
     }
   </style>
 </head>
 <body class="font-sans">
-  <button id="heroImageWrap" class="hero-image-wrap" aria-label="image transition">
-    <img id="heroImage" src="image.png" alt="hero" />
-  </button>
-
   <div id="sceneTransition" class="scene-transition">
     <img id="heroImage2" src="image2.png" alt="hero scene" />
   </div>
 
   <main id="appShell" class="app-shell max-w-7xl mx-auto px-3 sm:px-4 py-5 sm:py-7 md:py-9">
-    <header class="mb-5">
-      <h1 class="text-2xl md:text-4xl font-black tracking-tight">積立投資シミュレーション</h1>
-      <p class="mt-2 text-slate-500">条件を変えると自動で計算が反映</p>
+    <header class="mb-5 flex items-start justify-between gap-3 sm:gap-4">
+      <div class="min-w-0">
+        <h1 class="text-2xl md:text-4xl font-black tracking-tight">積立投資シミュレーション</h1>
+        <p class="mt-2 text-slate-500">条件を変えると自動で計算が反映</p>
+      </div>
+      <button id="heroImageWrap" class="hero-image-wrap" aria-label="image transition">
+        <img id="heroImage" src="image.png" alt="hero" />
+      </button>
     </header>
 
     <section class="grid grid-cols-1 lg:grid-cols-12 gap-4">
@@ -282,7 +284,7 @@
   </main>
 
   <script>
-    const presets = [{"ticker": "ACWI", "label": "オルカン（全世界株）", "annual_return": 0.17451664096939232, "annual_vol": 0.17}, {"ticker": "SPY", "label": "S&P500", "annual_return": 0.21300439842828145, "annual_vol": 0.19}, {"ticker": "^N225", "label": "日経平均", "annual_return": 0.18199380922956032, "annual_vol": 0.22}, {"ticker": "VTI", "label": "米国株式（全体）", "annual_return": 0.072, "annual_vol": 0.18}, {"ticker": "QQQ", "label": "NASDAQ100", "annual_return": 0.085, "annual_vol": 0.26}, {"ticker": "VEA", "label": "先進国株（除く米国）", "annual_return": 0.055, "annual_vol": 0.18}, {"ticker": "VWO", "label": "新興国株", "annual_return": 0.06, "annual_vol": 0.24}, {"ticker": "EFA", "label": "MSCI EAFE", "annual_return": 0.053, "annual_vol": 0.17}, {"ticker": "EEM", "label": "MSCI Emerging", "annual_return": 0.062, "annual_vol": 0.25}, {"ticker": "GLD", "label": "金（ゴールド）", "annual_return": 0.038, "annual_vol": 0.16}, {"ticker": "AGG", "label": "米国総合債券", "annual_return": 0.028, "annual_vol": 0.07}, {"ticker": "BND", "label": "米国債券（BND）", "annual_return": 0.027, "annual_vol": 0.06}, {"ticker": "VNQ", "label": "米国REIT", "annual_return": 0.05, "annual_vol": 0.21}, {"ticker": "BTC-USD", "label": "ビットコイン", "annual_return": 0.12, "annual_vol": 0.6}, {"ticker": "6448.T", "label": "ブラザー工業", "annual_return": 0.062, "annual_vol": 0.27}, {"ticker": "7203.T", "label": "トヨタ", "annual_return": 0.067, "annual_vol": 0.24}, {"ticker": "6902.T", "label": "DENSO", "annual_return": 0.064, "annual_vol": 0.25}, {"ticker": "7951.T", "label": "ヤマハ株式会社", "annual_return": 0.058, "annual_vol": 0.23}, {"ticker": "7974.T", "label": "任天堂", "annual_return": 0.072, "annual_vol": 0.29}, {"ticker": "9983.T", "label": "ファーストリテイリング", "annual_return": 0.07, "annual_vol": 0.28}];
+    const presets = [{"ticker": "ACWI", "label": "オルカン（全世界株）", "annual_return": 0.17451661304634158, "annual_vol": 0.17}, {"ticker": "SPY", "label": "S&P500", "annual_return": 0.2130044595872833, "annual_vol": 0.19}, {"ticker": "^N225", "label": "日経平均", "annual_return": 0.18199380922956032, "annual_vol": 0.22}, {"ticker": "VTI", "label": "米国株式（全体）", "annual_return": 0.072, "annual_vol": 0.18}, {"ticker": "QQQ", "label": "NASDAQ100", "annual_return": 0.085, "annual_vol": 0.26}, {"ticker": "VEA", "label": "先進国株（除く米国）", "annual_return": 0.055, "annual_vol": 0.18}, {"ticker": "VWO", "label": "新興国株", "annual_return": 0.06, "annual_vol": 0.24}, {"ticker": "EFA", "label": "MSCI EAFE", "annual_return": 0.053, "annual_vol": 0.17}, {"ticker": "EEM", "label": "MSCI Emerging", "annual_return": 0.062, "annual_vol": 0.25}, {"ticker": "GLD", "label": "金（ゴールド）", "annual_return": 0.038, "annual_vol": 0.16}, {"ticker": "AGG", "label": "米国総合債券", "annual_return": 0.028, "annual_vol": 0.07}, {"ticker": "BND", "label": "米国債券（BND）", "annual_return": 0.027, "annual_vol": 0.06}, {"ticker": "VNQ", "label": "米国REIT", "annual_return": 0.05, "annual_vol": 0.21}, {"ticker": "BTC-USD", "label": "ビットコイン", "annual_return": 0.12, "annual_vol": 0.6}, {"ticker": "6448.T", "label": "ブラザー工業", "annual_return": 0.062, "annual_vol": 0.27}, {"ticker": "7203.T", "label": "トヨタ", "annual_return": 0.067, "annual_vol": 0.24}, {"ticker": "6902.T", "label": "DENSO", "annual_return": 0.064, "annual_vol": 0.25}, {"ticker": "7951.T", "label": "ヤマハ株式会社", "annual_return": 0.058, "annual_vol": 0.23}, {"ticker": "7974.T", "label": "任天堂", "annual_return": 0.072, "annual_vol": 0.29}, {"ticker": "9983.T", "label": "ファーストリテイリング", "annual_return": 0.07, "annual_vol": 0.28}];
     let stateMode = "future_value";
 
     const fmtYen = (v) => new Intl.NumberFormat("ja-JP", { style: "currency", currency: "JPY", maximumFractionDigits: 0 }).format(v);
